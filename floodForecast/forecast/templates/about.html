@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About — Flood Forecast Mark 1{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">About</h1>
+        <p class="page-subtitle">Project overview & contact information</p>
+    </div>
+</div>
+
+<!-- PROJECT OVERVIEW -->
+<div class="panel">
+    <div class="panel__header">
+        <h3 class="panel__title">{{ project_name }}</h3>
+        <span class="panel__badge">Final Year Project</span>
+    </div>
+    <div class="about-content">
+        <div class="about-content__text">
+            <p>The <strong>River Flood Forecasting Device</strong> is a smart IoT-based early warning system designed to monitor river water levels in real time and predict potential flood events using machine learning.</p>
+            <p>Sensor data is collected via an <strong>ESP32 microcontroller</strong> equipped with water level, temperature, humidity, rain, and wind sensors. The data is transmitted to this web dashboard where an <strong>XGBoost machine learning model</strong> analyses patterns and predicts future flood probability.</p>
+            <p>The system automatically sends <strong>Telegram alerts</strong> when water levels reach warning or danger thresholds, enabling faster emergency response and public safety measures.</p>
+        </div>
+        <div class="about-content__specs">
+            <h4 class="specs__title">System Specifications</h4>
+            <ul class="specs__list">
+                <li><i class="bi bi-cpu"></i> <span>Hardware: ESP32 Microcontroller</span></li>
+                <li><i class="bi bi-droplet"></i> <span>Sensors: Water Level, Temperature, Humidity, Rain, Wind</span></li>
+                <li><i class="bi bi-diagram-3"></i> <span>ML Model: XGBoost (Deployment 1)</span></li>
+                <li><i class="bi bi-arrow-repeat"></i> <span>Next Model: Temporal Fusion Transformer (TFT)</span></li>
+                <li><i class="bi bi-globe"></i> <span>Backend: Django 6.0</span></li>
+                <li><i class="bi bi-database"></i> <span>Database: SQLite</span></li>
+                <li><i class="bi bi-bell"></i> <span>Alerts: Telegram Bot</span></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="panel">
+    <div class="panel__header">
+        <h3 class="panel__title">How It Works</h3>
+    </div>
+    <div class="flow-diagram">
+        <div class="flow-step">
+            <div class="flow-step__icon">
+                <i class="bi bi-cpu-fill"></i>
+            </div>
+            <p class="flow-step__label">ESP32 Sensor</p>
+            <p class="flow-step__desc">Collects real-time environmental data</p>
+        </div>
+        <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-step__icon">
+                <i class="bi bi-cloud-upload-fill"></i>
+            </div>
+            <p class="flow-step__label">HTTP POST</p>
+            <p class="flow-step__desc">Sends data to Django API endpoint</p>
+        </div>
+        <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-step__icon">
+                <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <p class="flow-step__label">XGBoost Model</p>
+            <p class="flow-step__desc">Predicts flood probability & future depth</p>
+        </div>
+        <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-step__icon">
+                <i class="bi bi-display-fill"></i>
+            </div>
+            <p class="flow-step__label">Dashboard</p>
+            <p class="flow-step__desc">Displays live data & predictions</p>
+        </div>
+        <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="flow-step">
+            <div class="flow-step__icon">
+                <i class="bi bi-telegram"></i>
+            </div>
+            <p class="flow-step__label">Telegram Alert</p>
+            <p class="flow-step__desc">Notifies when flood risk detected</p>
+        </div>
+    </div>
+</div>
+
+<!-- TELEGRAM BOT -->
+<div class="panel">
+    <div class="panel__header">
+        <h3 class="panel__title">Telegram Bot</h3>
+        <span class="panel__badge">{{ bot_name }}</span>
+    </div>
+    <div class="telegram-section">
+        <div class="telegram-section__info">
+            <i class="bi bi-telegram telegram-section__icon"></i>
+            <div>
+                <h4>{{ bot_name }}</h4>
+                <p>Subscribe to receive instant flood alerts and warnings directly on Telegram. The bot sends automatic notifications when water levels reach warning or danger thresholds.</p>
+                <ul class="telegram-section__features">
+                    <li><i class="bi bi-check-circle-fill"></i> Real-time flood alerts</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Warning notifications</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Sensor data snapshots</li>
+                </ul>
+            </div>
+        </div>
+        <a href="{{ telegram_bot_url }}" target="_blank" class="btn btn--telegram">
+            <i class="bi bi-telegram"></i>
+            Open Telegram Bot
+        </a>
+    </div>
+</div>
+
+<!-- CONTACT -->
+<div class="panel">
+    <div class="panel__header">
+        <h3 class="panel__title">Contact</h3>
+    </div>
+    <div class="contact-grid">
+        <a href="mailto:{{ email }}" class="contact-card">
+            <i class="bi bi-envelope-fill contact-card__icon"></i>
+            <div>
+                <p class="contact-card__label">Email</p>
+                <p class="contact-card__value">{{ email }}</p>
+            </div>
+        </a>
+        <a href="{{ linkedin }}" target="_blank" class="contact-card">
+            <i class="bi bi-linkedin contact-card__icon contact-card__icon--linkedin"></i>
+            <div>
+                <p class="contact-card__label">LinkedIn</p>
+                <p class="contact-card__value">W.M. Haziq</p>
+            </div>
+        </a>
+        <div class="contact-card">
+            <i class="bi bi-mortarboard-fill contact-card__icon contact-card__icon--edu"></i>
+            <div>
+                <p class="contact-card__label">Institution</p>
+                <p class="contact-card__value">Universiti Teknikal Malaysia Melaka (UTeM)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

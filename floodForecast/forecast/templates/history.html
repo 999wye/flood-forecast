@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}History — Flood Forecast Mark 1{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Historical Data</h1>
+        <p class="page-subtitle">Browse past sensor readings by date</p>
+    </div>
+</div>
+
+<div class="dashboard-row dashboard-row--history">
+
+    <!-- Calendar Panel -->
+    <div class="panel panel--calendar">
+        <div class="panel__header">
+            <h3 class="panel__title">Select Date</h3>
+        </div>
+        <div class="calendar" id="calendar">
+            <div class="calendar__nav">
+                <button class="calendar__btn" id="prevMonth"><i class="bi bi-chevron-left"></i></button>
+                <span class="calendar__month" id="calendarMonth"></span>
+                <button class="calendar__btn" id="nextMonth"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            <div class="calendar__weekdays">
+                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span>
+                <span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="calendar__days" id="calendarDays"></div>
+        </div>
+        <p class="calendar__hint">
+            <span class="dot dot--data"></span> Days with sensor data
+        </p>
+    </div>
+
+    <!-- Summary Stats Panel -->
+    <div class="panel panel--stats">
+        <div class="panel__header">
+            <h3 class="panel__title">Day Summary</h3>
+            <span class="panel__badge" id="selectedDateLabel">No date selected</span>
+        </div>
+        <div id="summaryContent" class="summary-grid">
+            <div class="summary-stat">
+                <span class="summary-stat__label">Max Depth</span>
+                <span class="summary-stat__value" id="maxDepth">—</span>
+                <span class="summary-stat__unit">cm</span>
+            </div>
+            <div class="summary-stat">
+                <span class="summary-stat__label">Min Depth</span>
+                <span class="summary-stat__value" id="minDepth">—</span>
+                <span class="summary-stat__unit">cm</span>
+            </div>
+            <div class="summary-stat">
+                <span class="summary-stat__label">Avg Depth</span>
+                <span class="summary-stat__value" id="avgDepth">—</span>
+                <span class="summary-stat__unit">cm</span>
+            </div>
+            <div class="summary-stat">
+                <span class="summary-stat__label">Total Rain</span>
+                <span class="summary-stat__value" id="totalRain">—</span>
+                <span class="summary-stat__unit">mm</span>
+            </div>
+            <div class="summary-stat summary-stat--wide">
+                <span class="summary-stat__label">Flood Events</span>
+                <span class="summary-stat__value summary-stat__value--alert" id="floodEvents">—</span>
+            </div>
+            <div class="summary-stat summary-stat--wide">
+                <span class="summary-stat__label">Total Readings</span>
+                <span class="summary-stat__value" id="totalReadings">—</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- History Chart -->
+<div class="panel" id="chartPanel" style="display:none;">
+    <div class="panel__header">
+        <h3 class="panel__title">Water Depth Over Time</h3>
+        <span class="panel__badge" id="chartDateLabel"></span>
+    </div>
+    <canvas id="historyChart" height="80"></canvas>
+</div>
+
+<!-- History Table -->
+<div class="panel" id="tablePanel" style="display:none;">
+    <div class="panel__header">
+        <h3 class="panel__title">Sensor Readings</h3>
+        <span class="panel__badge" id="readingCount"></span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Water Depth</th>
+                    <th>Temperature</th>
+                    <th>Humidity</th>
+                    <th>Rain Volume</th>
+                    <th>Flood Status</th>
+                    <th>Flood Prob.</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Empty State -->
+<div class="panel" id="emptyPanel">
+    <div class="empty-state">
+        <i class="bi bi-calendar3"></i>
+        <p>Select a date from the calendar to view historical sensor data</p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/calendar.js' %}"></script>
+<script>
+    // Dates that have data — passed from Django views.py
+    const datesWithData = {{ dates_with_data|safe }};
+
+    // History chart instance
+    let historyChart = null;
+
+    function fetchHistoryData(dateStr) {
+        document.getElementById('emptyPanel').style.display  = 'none';
+        document.getElementById('chartPanel').style.display  = 'none';
+        document.getElementById('tablePanel').style.display  = 'none';
+        document.getElementById('selectedDateLabel').textContent = dateStr;
+        document.getElementById('chartDateLabel').textContent    = dateStr;
+
+        fetch(`/api/history/?date=${dateStr}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.count === 0) {
+                    document.getElementById('emptyPanel').style.display = 'block';
+                    document.getElementById('emptyPanel').querySelector('p').textContent =
+                        `No sensor data found for ${dateStr}`;
+                    return;
+                }
+
+                // Update summary
+                document.getElementById('maxDepth').textContent     = data.summary.max_depth;
+                document.getElementById('minDepth').textContent     = data.summary.min_depth;
+                document.getElementById('avgDepth').textContent     = data.summary.avg_depth;
+                document.getElementById('totalRain').textContent    = data.summary.total_rain;
+                document.getElementById('floodEvents').textContent  = data.summary.flood_events;
+                document.getElementById('totalReadings').textContent = data.count;
+                document.getElementById('readingCount').textContent  = `${data.count} readings`;
+
+                // Draw chart
+                const times  = data.readings.map(r => r.timestamp);
+                const depths = data.readings.map(r => r.water_depth);
+                const pointColors = data.readings.map(r =>
+                    r.flood_status === 'flood'   ? '#ef4444' :
+                    r.flood_status === 'warning' ? '#f59e0b' : '#22c55e'
+                );
+
+                const chartCtx = document.getElementById('historyChart');
+                if (historyChart) historyChart.destroy();
+                historyChart = new Chart(chartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: times,
+                        datasets: [{
+                            label: 'Water Depth (cm)',
+                            data: depths,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.08)',
+                            borderWidth: 2,
+                            pointBackgroundColor: pointColors,
+                            pointRadius: 3,
+                            tension: 0.4,
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.parsed.y} cm`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94a3b8', maxTicksLimit: 12 },
+                                grid:  { color: '#1e2533' }
+                            },
+                            y: {
+                                ticks: { color: '#94a3b8' },
+                                grid:  { color: '#1e2533' }
+                            }
+                        }
+                    }
+                });
+
+                // Build table
+                const tbody = document.getElementById('historyTableBody');
+                tbody.innerHTML = data.readings.map(r => `
+                    <tr>
+                        <td class="mono">${r.timestamp}</td>
+                        <td class="mono">${r.water_depth} cm</td>
+                        <td class="mono">${r.temperature}°C</td>
+                        <td class="mono">${r.humidity}%</td>
+                        <td class="mono">${r.rain_volume} mm</td>
+                        <td><span class="badge badge--${r.flood_status}">${r.flood_status.toUpperCase()}</span></td>
+                        <td class="mono">${r.flood_probability}%</td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('chartPanel').style.display = 'block';
+                document.getElementById('tablePanel').style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Failed to fetch history data:', err);
+            });
+    }
+
+    // Expose to calendar.js
+    window.onDateSelected  = fetchHistoryData;
+    window.datesWithData   = datesWithData;
+</script>
+{% endblock %}
